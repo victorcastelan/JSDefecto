@@ -1,11 +1,3 @@
-/*!
- * Requiere:
-* underscore 1.5.1
-* underscore.string 2.2.0rc
-* jsmart 2.9
-* php2js
-*/
-
 
 
 
@@ -35,10 +27,9 @@ var $d = {
 	 *	@return string/object
 	 */
 	// primerIndice
-	primero : function(objeto, incluirContenido) {
-		incluirContenido = incluirContenido || false; // true/false
+	primero : function(objeto) {
 		for (var first in objeto) break;
-		return incluirContenido ? objeto[first] : first;
+		return first;
 	},
 	
 	/**
@@ -51,28 +42,35 @@ var $d = {
 	 *	@return string/object
 	 */
 	// ultimoIndice
-	ultimo : function(objeto, incluirContenido) {
-		incluirContenido = incluirContenido || false; // true/false
+	ultimo : function(objeto) {
 		for (var last in objeto);
-		return incluirContenido ? objeto[last] : last;
+		return last;
 	},
 	
-	siguiente : function(objeto, llave, incluirContenido) {
-		incluirContenido = incluirContenido || false; // true/false
+	siguiente : function(objeto, llave, reiniciar) {
+		reiniciar = reiniciar || false;
 		if (!objeto.hasOwnProperty(llave)) return false;
-		var keys = _.keys(objeto);
-		var actual = _.indexOf(keys,llave);
-		actual = actual == (keys.length - 1) ? 0 : ++actual;
-		return incluirContenido ? objeto[keys[actual]] : keys[actual];
+		var flag = false, arr = [];
+		for (var i in objeto) {
+			arr.push(i);
+			if(flag) break;
+			if(i == llave) flag = true;
+		}
+		return i === llave && reiniciar 
+			? arr[0] : i === llave && !reiniciar 
+			? false : i;
 	},
 	
-	anterior : function(objeto, llave, incluirContenido) {
-		incluirContenido = incluirContenido || false; // true/false
+	anterior : function(objeto, llave, reiniciar) {
+		reiniciar = reiniciar || false;
 		if (!objeto.hasOwnProperty(llave)) return false;
-		var keys = _.keys(objeto);
-		var actual = _.indexOf(keys,llave);
-		actual = actual == 0 ? keys.length - 1 : --actual;
-		return incluirContenido ? objeto[keys[actual]] : keys[actual];
+		var arr = [], count = 0;
+		for (var i in objeto) {
+			arr.push(i);
+			if(i == llave) break;
+			count++;
+		}
+		return count ? arr[count-1] : !reiniciar ? false : $d.ultimo(obj);
 	},
 	
 	/**
@@ -141,7 +139,6 @@ var $d = {
 	 * ej:	$.sanitize('Víctor Manuel-_jajñ%&') => 'Victor_Manuel_jajn_'
 	 * @param string
 	 * @return string
-	 * @todo Comparar con _.str
 	 */
 	sanitize : function(esto) {
 		var __r = {
@@ -195,46 +192,6 @@ var $d = {
 		return x1 + x2;
 	},
 	
-	/**
-	 * Codifica una cadena en base64
-	 * ej:	$d.codificaArregloBase64({'uno':'jaja', 'dos':'jeje'})
-			=> "dW5vPWphamEmZG9zPWplamU%3D"
-	 * @param string
-	 * @return object
-	 */
-	codificaArregloBase64 : function(arreglo) {
-		var i, v, parsedArr = '', salida;
-		for (var i in arreglo) {
-			if (!arreglo.hasOwnProperty(i)) continue;
-			parsedArr += escape(i);
-			parsedArr += '='+escape(arreglo[i]);
-			parsedArr += '&';
-		}
-		parsedArr = parsedArr.substr(0, parsedArr.length - 1);
-		return escape(base64_encode(parsedArr));
-	},
-	
-	/**
-	 * Decodifica un objeto codificado en base64 y devuelve el objeto
-	 * ej:	$d.decodificaCadenaBase64("dW5vPWphamEmZG9zPWplamU%3D")
-	 *		{'uno':'jaja', 'dos':'jeje'}
-	 * @param string
-	 * @return object
-	 */
-	decodificaCadenaBase64 : function(cadenaBase64) {
-		var uriObj, i, v, eachUriObj, parsedObj = {}, param;
-		if ($.type(cadenaBase64) == 'string') {
-			param = unescape(cadenaBase64);
-			param = base64_decode(param);
-			uriObj = param.split('&');
-			$.each(uriObj,function(i,v){
-				eachUriObj = v.split('=');
-				parsedObj[eachUriObj[0]] = eachUriObj.length > 1 ? eachUriObj[1] : '';
-			});
-			return parsedObj;
-		}
-		return false;
-	},
 	
 	// Devuelve en json, todos los inputs de un contenedor
 	// listo para ser enviado a un server
@@ -476,37 +433,4 @@ var $d = {
 };
 
 
-/* Despliegue v2 Implementación de smarty*/
-var despliegue = {
-	dibujar : function(args) {
-		var plantillas = $('body').data('plantillas').datos || false;
-		var miPlantilla, jqDestino, tpl;
-
-		var arg = {
-			'plantilla' : 'blank',
-			'datos' : {},
-			'destino' : false,
-			'posicion' : 'append',
-			'efectos' : false
-		};
-
-		_.extend(arg, args);
-		if (!plantillas.hasOwnProperty(arg.plantilla)) return false;
-
-		miPlantilla = plantillas[arg.plantilla];
-
-		if (arg.destino && !$(arg.destino).is('*'))
-			return false;
-
-		jqDestino = arg.destino ? $(arg.destino) : false;
-		tpl = new jSmart(miPlantilla).fetch(arg.datos);
-
-		if (arg.destino) {
-			if (arg.efectos) return $(tpl).hide().appendTo(arg.destino).fadeIn();
-			return jqDestino[arg.posicion](tpl);
-		} else {
-			return tpl;
-		}
-	}
-};
 
